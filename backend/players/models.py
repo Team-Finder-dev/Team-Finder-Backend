@@ -1,7 +1,5 @@
-from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
-class Player(AbstractUser):
+class Player(models.Model):
     """Player model"""
-    
