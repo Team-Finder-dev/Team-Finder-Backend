@@ -3,10 +3,27 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
+class Sport(models.Model):
+    """Sport model"""
+    name = models.CharField(
+        unique=True,
+        max_length=validators.MEDIUM_STR,
+        verbose_name="Вид спорта",
+    )
+
+    class Meta:
+        verbose_name = ("Sport")
+        verbose_name_plural = ("Sports")
+
+    def __str__(self):
+        return self.name
+
+
 class Level(models.Model):
     """Level model"""
     name = models.CharField(
         verbose_name=("Статус"),
+        max_length=validators.MEDIUM_STR,
     )
 
     class Meta:
@@ -21,6 +38,7 @@ class Sex(models.Model):
     """Sex model"""
     name = models.CharField(
         verbose_name=("Пол"),
+        max_length=validators.MEDIUM_STR,
     )
 
     class Meta:
@@ -36,7 +54,7 @@ class Format(models.Model):
     name = models.CharField(
         verbose_name=("Игровой формат"),
         max_length=validators.SHORT_STR,
-        validators=[validators.validate_format]
+        validators=[validators.validate_format],
     )
 
     class Meta:
@@ -47,11 +65,34 @@ class Format(models.Model):
         return self.name
 
 
-class ContactDetails(models.Model):
-    """ContactDetail model"""
-    messanger = models.CharField(
+class Messanger(models.Model):
+    """Messanger model"""
+    name = models.CharField(
         verbose_name="Способ связи",
         help_text="Способ связи",
+        max_length=validators.SHORT_STR,
+    )
+    logo = models.ImageField(
+        verbose_name="Логотип",
+        help_text="Загрузите логотип",
+        upload_to="media/",
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = ("Messanger")
+        verbose_name_plural = ("Messangers")
+
+    def __str__(self):
+        return self.name
+
+
+class ContactDetails(models.Model):
+    """ContactDetail model"""
+    messanger = models.ForeignKey(
+        Messanger,
+        on_delete=models.CASCADE,
+        related_name="contact_details",
     )
     main_contact = models.BooleanField(
         verbose_name="Передочтительный способ связи",
@@ -98,85 +139,19 @@ class City(models.Model):
         return self.name
 
 
-class EntityBaseModel(models.Model):
+class EntityBaseModel(AbstractUser):
     """Base model to create teams and players"""
-    format = models.ForeignKey(
-        Format,
-        on_delete=models.DO_NOTHING,
-        related_name="teams",
-        blank=False,
-        null=False,
-    )
-    level = models.ForeignKey(
-        Level,
-        on_delete=models.SET_NULL,
-        related_name="%(class)ss",
-        blank=False,
-        null=True,
-    )
-    sex = models.ForeignKey(
-        Sex,
-        on_delete=models.SET_NULL,
-        related_name="%(class)ss",
-        blank=False,
-        null=True,
-    )
-    password = models.CharField(
-        max_length=validators.SHORT_STR,
-        verbose_name="Пароль",
-        help_text="Введите пароль",
-        blank=False,
-        null=False,
-    )
-    photo = models.ImageField(
-        verbose_name="Фото",
-        help_text="Загрузите фото",
-        upload_to="media/",
-        blank=True,
-    )
-    city = models.ForeignKey(
-        City,
-        on_delete=models.DO_NOTHING,
-        related_name="%(class)ss",
-        blank=False,
-        null=True,
-    )
-    statistics = models.URLField(
-        verbose_name=("Статистика"),
-        max_length=validators.LONG_STR,
-        help_text="Введите ссылку на статистику",
-        blank=True,
-    )
-    academy = models.CharField(
-        verbose_name=("Название комнады или академии"),
+    # Define the USERNAME_FIELD attribute
+    USERNAME_FIELD = "registration_phone_number"
+    email = None
+    registration_phone_number = models.CharField(
         max_length=validators.MEDIUM_STR,
-        help_text=("Введите название комнады или академии"),
-        balnk=True,
-    )
-
-    class Meta:
-        verbose_name = ("%(class)s")
-        verbose_name_plural = ("%(class)ss")
-
-
-class Sport(models.Model):
-    """Sport model"""
-    name = models.CharField(
         unique=True,
-        max_length=validators.MEDIUM_STR,
-        verbose_name="Вид спорта",
+        blank=False,
+        verbose_name="Телефон",
+        help_text="+7-911-123-45-67",
+        validators=[validators.validate_phone_number],
     )
-
-    class Meta:
-        verbose_name = ("Sport")
-        verbose_name_plural = ("Sports")
-
-    def __str__(self):
-        return self.name
-
-
-class UserDetails(AbstractUser):
-    """UserDetails model"""
     first_name = models.CharField(
         max_length=validators.MEDIUM_STR,
         blank=False,
@@ -193,14 +168,65 @@ class UserDetails(AbstractUser):
         max_length=validators.MEDIUM_STR,
         verbose_name="Отчество",
         help_text="Введите отчество",
+        blank=True,
+    )
+    sport = models.ForeignKey(
+        Sport,
+        on_delete=models.SET_NULL,
+        related_name="%(class)ss",
+        blank=False,
+        null=True,
+    )
+    format = models.ForeignKey(
+        Format,
+        on_delete=models.SET_NULL,
+        related_name="%(class)ss",
+        blank=False,
+        null=True,
+    )
+    level = models.ForeignKey(
+        Level,
+        on_delete=models.SET_NULL,
+        related_name="%(class)ss",
+        blank=False,
+        null=True,
+    )
+    sex = models.ForeignKey(
+        Sex,
+        on_delete=models.SET_NULL,
+        related_name="%(class)ss",
+        blank=False,
+        null=True,
+    )
+    photo = models.ImageField(
+        verbose_name="Фото",
+        help_text="Загрузите фото",
+        upload_to="media/",
+        blank=True,
+    )
+    city = models.ForeignKey(
+        City,
+        on_delete=models.SET_NULL,
+        related_name="%(class)ss",
+        blank=False,
+        null=True,
+    )
+    statistics = models.URLField(
+        verbose_name=("Статистика"),
+        max_length=validators.LONG_STR,
+        help_text="Введите ссылку на статистику",
+        blank=True,
+    )
+    academy = models.CharField(
+        verbose_name=("Название команды или академии"),
+        max_length=validators.MEDIUM_STR,
+        help_text=("Введите название команды или академии"),
+        blank=True,
     )
 
     class Meta:
-        verbose_name = "User"
-        verbose_name_plural = "Users"
-
-    def __str__(self) -> str:
-        return f'{self.first_name} {self.last_name}'
+        verbose_name = ("%(class)s")
+        verbose_name_plural = ("%(class)ss")
 
 
 class ManagerPosition(models.Model):
@@ -217,15 +243,6 @@ class ManagerPosition(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class TeamManager(UserDetails):
-    """Team_manager model"""
-    postion = models.ForeignKey(
-        ManagerPosition,
-        blank=False,
-        on_delete=models.DO_NOTHING,
-    )
 
 
 class Tournament(models.Model):
@@ -249,15 +266,8 @@ class Team(EntityBaseModel):
         max_length=validators.MEDIUM_STR,
         verbose_name="Название команды",
     )
-    sport = models.ForeignKey(
-        Sport,
-        on_delete=models.DO_NOTHING,
-        related_name="teams",
-        blank=False,
-        null=False,
-    )
     manager = models.ForeignKey(
-        TeamManager,
+        ManagerPosition,
         on_delete=models.SET_NULL,
         related_name="teams",
         blank=False,

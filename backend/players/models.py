@@ -7,7 +7,7 @@ from teams import models as teams_models
 class Position(models.Model):
     """Position model"""
     name = models.CharField(
-        verbouse_name=("Позиция"),
+        verbose_name=("Позиция"),
         help_text="Выберите позицию",
         max_length=validators.MEDIUM_STR,
     )
@@ -47,12 +47,12 @@ class PlayerSportPosition(models.Model):
     """Model connect player and Sport positon"""
     sport_postion = models.ForeignKey(
         SportPosition,
-        realted_name="players",
+        related_name="players",
         on_delete=models.CASCADE,
     )
     palyer = models.ForeignKey(
         "Player",
-        realted_name="sport_positions",
+        related_name="sport_positions",
         on_delete=models.CASCADE,
     )
 
@@ -116,19 +116,19 @@ class PositionCharacteristic(models.Model):
         verbose_name_plural = ("PositionCharacteristics")
 
     def __str__(self):
-        return f"{self.position.name}: {self.characteristic.name}"
+        return self.characteristic
 
 
 class PlayerPositionCharacteristic(models.Model):
     """Model connect player and Sport positon"""
     position_characteristic = models.ForeignKey(
         PositionCharacteristic,
-        realted_name="players",
+        related_name="players",
         on_delete=models.CASCADE,
     )
     palyer = models.ForeignKey(
         "Player",
-        realted_name="position_characteristics",
+        related_name="position_characteristics",
         on_delete=models.CASCADE,
     )
 
@@ -147,18 +147,60 @@ class PlayerContactDetails(teams_models.ContactDetails):
     )
 
 
-class Player(teams_models.EntityBaseModel, teams_models.UserDetails):
-    """Player model"""
-    team = models.ForeignKey(
-        teams_models.Team,
-        verbose_name=("Команда"),
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
+class DominantSide(models.Model):
+    """DominantSide"""
+    name = models.CharField(
+        verbose_name=("Доминирующая рука/нога"),
+        max_length=validators.SHORT_STR,
     )
-    is_lefty = models.BooleanField(
-        verbose_name="Доминирующая рука/нога",
-        default=False,
+
+    class Meta:
+        verbose_name = ("DominantSide")
+        verbose_name_plural = ("DominantSides")
+
+    def __str__(self):
+        return self.name
+
+
+class SportDominantSide(models.Model):
+    """SportDominantSide model"""
+    dominant_side = models.ForeignKey(
+        DominantSide,
+        verbose_name=("Доминирующая рука/нога"),
+        on_delete=models.CASCADE,
+        related_name="sports",
+    )
+    sport = models.ForeignKey(
+        teams_models.Sport,
+        verbose_name=("Спорт"),
+        on_delete=models.CASCADE,
+        related_name="dominant_sides",
+    )
+
+    class Meta:
+        verbose_name = ("SportDominantSide")
+        verbose_name_plural = ("SportDominantSides")
+
+    def __str__(self):
+        return f"{self.sport} {self.dominant_side}"
+
+
+class Player(teams_models.EntityBaseModel):
+    """Player model"""
+    birthday = models.DateField(
+        verbose_name=("Дата рождения"),
+        auto_now=False,
+        auto_now_add=False,
+        help_text=("Дата рождения"),
+        blank=False,
+    )
+    dominant_side = models.ForeignKey(
+        DominantSide,
+        verbose_name=("Доминирующая рука/нога"),
+        on_delete=models.SET_NULL,
+        related_name="players",
+        blank=False,
+        null=True,
     )
     weight = models.PositiveSmallIntegerField(
         verbose_name=("Вес"),
@@ -174,11 +216,35 @@ class Player(teams_models.EntityBaseModel, teams_models.UserDetails):
         blank=False,
         null=False,
     )
-    about = models.CharField(
-        verbouse_name=("О себе"),
+    about = models.TextField(
+        verbose_name=("О себе"),
         help_text="Расскажите о себе",
-        max_length=validators.LONG_STR,
     )
 
     def __str__(self):
-        return self.name
+        return f"{self.first_name} {self.last_name}"
+
+
+# Class introduced because teams and player are inhereted from the same class
+# the connection between teams and player is one_to_many
+class TeamPlayer(models.Model):
+    """TeamPlayer model"""
+    player = models.ForeignKey(
+        Player,
+        verbose_name=("Игрок"),
+        on_delete=models.CASCADE,
+        related_name="teams",
+    )
+    team = models.ForeignKey(
+        teams_models.Team,
+        verbose_name=("Команда"),
+        on_delete=models.CASCADE,
+        related_name="players",
+    )
+
+    class Meta:
+        verbose_name = ("TeamPlayer")
+        verbose_name_plural = ("TeamPlayers")
+
+    def __str__(self):
+        return self.player
